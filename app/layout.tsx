@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'LoL Intelligence Dashboard',
-  description: 'Advanced analytics and insights for League of Legends',
+  title: 'LOL·IA — Progression Compétitive',
+  description: 'Plateforme de Progression Compétitive',
 }
 
 export default function RootLayout({
@@ -12,7 +12,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="fr">
       <body>
         {children}
       </body>
