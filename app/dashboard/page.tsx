@@ -2,7 +2,11 @@
 
 import React, { useState } from 'react'
 
-export default function DashboardPage() {
+export default function Home() {
+  return <h1>Hello</h1>
+}
+
+export function DashboardPage() {
   const [currentView, setCurrentView] = useState('dashboard')
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(false)

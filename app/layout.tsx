@@ -1,10 +1,10 @@
-import type { Metadata } from 'next'
+//import type { Metadata } from 'next'
 import './globals.css'
 
-export const metadata: Metadata = {
-  title: 'LOL·IA — Progression Compétitive',
-  description: 'Plateforme de Progression Compétitive',
-}
+//export const metadata: Metadata = {
+//  title: 'LOL·IA — Progression Compétitive',
+//  description: 'Plateforme de Progression Compétitive',
+//}
 
 export default function RootLayout({
   children,
