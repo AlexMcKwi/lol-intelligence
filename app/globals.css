@@ -175,7 +175,7 @@ body::before {
 .btn-primary:hover { background: var(--gold-light); box-shadow: 0 0 20px rgba(200,155,60,0.3); }
 
 /* ── MAIN LAYOUT ── */
-#app { display: none; min-height: 100vh; position: relative; z-index: 1; }
+#app { display: flex; min-height: 100vh; position: relative; z-index: 1; }
 
 /* ── SIDEBAR ── */
 .sidebar {
@@ -266,6 +266,7 @@ body::before {
   margin-left: 220px;
   padding: 2rem;
   min-height: 100vh;
+  flex: 1;
 }
 
 /* ── TOPBAR ── */

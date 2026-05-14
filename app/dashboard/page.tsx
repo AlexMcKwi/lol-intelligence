@@ -2,14 +2,16 @@
 
 import React, { useState } from 'react'
 
-export default function Home() {
-  return <h1>Hello</h1>
-}
-
-export function DashboardPage() {
+export default function DashboardPage() {
   const [currentView, setCurrentView] = useState('dashboard')
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState('login')
+  const [loginEmail, setLoginEmail] = useState('')
+  const [loginPassword, setLoginPassword] = useState('')
+  const [registerEmail, setRegisterEmail] = useState('')
+  const [registerPassword, setRegisterPassword] = useState('')
+  const [error, setError] = useState('')
 
   const pageTitles = {
     dashboard: 'Tableau de <span>Bord</span>',
@@ -22,12 +24,66 @@ export function DashboardPage() {
     setCurrentView(view)
   }
 
-  const enterApp = () => {
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
     setIsLoading(true)
-    setTimeout(() => {
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: loginEmail, password: loginPassword })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Erreur lors de la connexion')
+        setIsLoading(false)
+        return
+      }
+
+      // Connexion réussie - garder le loading visible
+      setTimeout(() => {
+        setIsLoading(false)
+        setIsAuthenticated(true)
+      }, 1800)
+    } catch (err) {
+      setError('Erreur de connexion au serveur')
       setIsLoading(false)
-      setIsAuthenticated(true)
-    }, 1800)
+    }
+  }
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setIsLoading(true)
+
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: registerEmail, password: registerPassword })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Erreur lors de l\'inscription')
+        setIsLoading(false)
+        return
+      }
+
+      // Inscription réussie - garder le loading visible
+      setTimeout(() => {
+        setIsLoading(false)
+        setIsAuthenticated(true)
+      }, 1800)
+    } catch (err) {
+      setError('Erreur de connexion au serveur')
+      setIsLoading(false)
+    }
   }
 
   const syncMatches = () => {
@@ -60,38 +116,101 @@ export function DashboardPage() {
           <div className="auth-tagline">Plateforme de Progression Compétitive</div>
           <div className="auth-card">
             <div className="auth-tabs">
-              <div className="auth-tab active">Connexion</div>
-              <div className="auth-tab">Inscription</div>
+              <div 
+                className={`auth-tab ${activeTab === 'login' ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveTab('login')
+                  setError('')
+                }}
+              >
+                Connexion
+              </div>
+              <div 
+                className={`auth-tab ${activeTab === 'register' ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveTab('register')
+                  setError('')
+                }}
+              >
+                Inscription
+              </div>
             </div>
 
-            <div id="login-form">
-              <div className="auth-field">
-                <label>Email</label>
-                <input type="email" placeholder="votre@email.com" />
+            {error && (
+              <div style={{
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                color: '#ef4444',
+                padding: '0.75rem',
+                borderRadius: '0.5rem',
+                marginBottom: '1rem',
+                fontSize: '0.875rem',
+                border: '1px solid rgba(239, 68, 68, 0.2)'
+              }}>
+                {error}
               </div>
-              <div className="auth-field">
-                <label>Mot de passe</label>
-                <input type="password" placeholder="••••••••" />
-              </div>
-              <button className="btn-primary" onClick={enterApp}>Se connecter</button>
-            </div>
+            )}
 
-            <div id="register-form" style={{display: 'none'}}>
-              <div className="auth-field">
-                <label>Email</label>
-                <input type="email" placeholder="votre@email.com" />
-              </div>
-              <div className="auth-field">
-                <label>Mot de passe</label>
-                <input type="password" placeholder="••••••••" />
-              </div>
-              <div className="auth-riot-link">
-                🎮 &nbsp; Connecter mon compte Riot Games
-              </div>
-              <button className="btn-primary" onClick={enterApp}>Créer mon compte</button>
-            </div>
+            {activeTab === 'login' && (
+              <form onSubmit={handleLogin}>
+                <div className="auth-field">
+                  <label>Email</label>
+                  <input 
+                    type="email" 
+                    placeholder="votre@email.com"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="auth-field">
+                  <label>Mot de passe</label>
+                  <input 
+                    type="password" 
+                    placeholder="••••••••"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <button type="submit" className="btn-primary" disabled={isLoading}>
+                  {isLoading ? 'Connexion en cours...' : 'Se connecter'}
+                </button>
+              </form>
+            )}
+
+            {activeTab === 'register' && (
+              <form onSubmit={handleRegister}>
+                <div className="auth-field">
+                  <label>Email</label>
+                  <input 
+                    type="email" 
+                    placeholder="votre@email.com"
+                    value={registerEmail}
+                    onChange={(e) => setRegisterEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="auth-field">
+                  <label>Mot de passe</label>
+                  <input 
+                    type="password" 
+                    placeholder="••••••••"
+                    value={registerPassword}
+                    onChange={(e) => setRegisterPassword(e.target.value)}
+                    required
+                    minLength={6}
+                  />
+                </div>
+                <div className="auth-riot-link">
+                  🎮 &nbsp; Connecter mon compte Riot Games (optionnel)
+                </div>
+                <button type="submit" className="btn-primary" disabled={isLoading}>
+                  {isLoading ? 'Création en cours...' : 'Créer mon compte'}
+                </button>
+              </form>
+            )}
           </div>
-          <div className="text-muted">Démo V1 — données simulées</div>
+          <div className="text-muted">Données sécurisées avec bcrypt</div>
         </div>
       </>
     )
