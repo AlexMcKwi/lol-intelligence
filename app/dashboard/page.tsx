@@ -12,6 +12,14 @@ export default function DashboardPage() {
   const [registerEmail, setRegisterEmail] = useState('')
   const [registerPassword, setRegisterPassword] = useState('')
   const [error, setError] = useState('')
+  
+  // Player search state
+  const [playerSearchDone, setPlayerSearchDone] = useState(false)
+  const [gameName, setGameName] = useState('')
+  const [tagLine, setTagLine] = useState('')
+  const [playerData, setPlayerData] = useState<any>(null)
+  const [playerMatches, setPlayerMatches] = useState<any[]>([])
+  const [searchError, setSearchError] = useState('')
 
   const pageTitles = {
     dashboard: 'Tableau de <span>Bord</span>',
@@ -93,10 +101,89 @@ export default function DashboardPage() {
     }, 2200)
   }
 
+  const handlePlayerSearch = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSearchError('')
+    setIsLoading(true)
+
+    try {
+      const response = await fetch(`/api/player/search?gameName=${encodeURIComponent(gameName)}&tagLine=${encodeURIComponent(tagLine)}`)
+      const data = await response.json()
+
+      if (!response.ok) {
+        setSearchError(data.error || 'Joueur non trouvé')
+        setIsLoading(false)
+        return
+      }
+
+      setPlayerData(data.player)
+      setPlayerMatches(data.matches)
+      setPlayerSearchDone(true)
+      setIsLoading(false)
+    } catch (err) {
+      setSearchError('Erreur lors de la recherche du joueur')
+      setIsLoading(false)
+    }
+  }
+
+  const handleNewSearch = () => {
+    setPlayerSearchDone(false)
+    setGameName('')
+    setTagLine('')
+    setSearchError('')
+  }
+
   const showToast = (title: string, body: string) => {
     // Simple toast implementation
     console.log(`${title}: ${body}`)
   }
+
+  // Calculate player statistics from matches
+  const calculateStats = () => {
+    if (!playerMatches || playerMatches.length === 0) {
+      return { winrate: 0, kda: 0, csPerMin: 0, visionScore: 0 }
+    }
+
+    const wins = playerMatches.filter(m => m.win).length
+    const winrate = (wins / playerMatches.length) * 100
+
+    const totalKills = playerMatches.reduce((sum, m) => sum + m.kills, 0)
+    const totalDeaths = playerMatches.reduce((sum, m) => sum + m.deaths, 0)
+    const totalAssists = playerMatches.reduce((sum, m) => sum + m.assists, 0)
+    const avgKda = totalDeaths === 0 ? totalKills + totalAssists : (totalKills + totalAssists) / totalDeaths
+
+    const avgCsPerMin = playerMatches.reduce((sum, m) => sum + m.csPerMinute, 0) / playerMatches.length
+    const avgVisionScore = playerMatches.reduce((sum, m) => sum + m.visionScore, 0) / playerMatches.length
+
+    return {
+      winrate: Math.round(winrate),
+      kda: avgKda.toFixed(1),
+      csPerMin: avgCsPerMin.toFixed(1),
+      visionScore: Math.round(avgVisionScore)
+    }
+  }
+
+  const getChampionStats = () => {
+    if (!playerMatches || playerMatches.length === 0) return {}
+
+    const champStats: any = {}
+    playerMatches.forEach(match => {
+      if (!champStats[match.championName]) {
+        champStats[match.championName] = { wins: 0, total: 0, winrate: 0 }
+      }
+      champStats[match.championName].total++
+      if (match.win) champStats[match.championName].wins++
+    })
+
+    Object.keys(champStats).forEach(champ => {
+      champStats[champ].winrate = Math.round((champStats[champ].wins / champStats[champ].total) * 100)
+    })
+
+    return champStats
+  }
+
+  const stats = calculateStats()
+  const champStats = getChampionStats()
 
   if (!isAuthenticated) {
     return (
@@ -109,8 +196,6 @@ export default function DashboardPage() {
             <div className="loading-text">Chargement du profil...</div>
           </div>
         )}
-
-        {/* AUTH */}
         <div id="auth-screen">
           <div className="auth-logo">LOL<span>·IA</span></div>
           <div className="auth-tagline">Plateforme de Progression Compétitive</div>
@@ -216,6 +301,75 @@ export default function DashboardPage() {
     )
   }
 
+  // Player search screen - shown after authentication but before dashboard
+  if (isAuthenticated && !playerSearchDone) {
+    return (
+      <>
+        {isLoading && (
+          <div className="loading-overlay">
+            <div className="sidebar-logo" style={{fontSize: '2rem'}}>LOL<span>·IA</span></div>
+            <div className="loading-bar"></div>
+            <div className="loading-text">Recherche du joueur...</div>
+          </div>
+        )}
+        <div id="auth-screen">
+          <div className="auth-logo">LOL<span>·IA</span></div>
+          <div className="auth-tagline">Plateforme de Progression Compétitive</div>
+          <div className="auth-card">
+            <div style={{textAlign: 'center', marginBottom: '1.5rem'}}>
+              <h2 style={{margin: '0 0 0.5rem 0', color: 'var(--text-primary)'}}>Chercher un joueur</h2>
+              <p style={{margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)'}}>Entrez votre pseudo League of Legends</p>
+            </div>
+
+            {searchError && (
+              <div style={{
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                color: '#ef4444',
+                padding: '0.75rem',
+                borderRadius: '0.5rem',
+                marginBottom: '1rem',
+                fontSize: '0.875rem',
+                border: '1px solid rgba(239, 68, 68, 0.2)'
+              }}>
+                {searchError}
+              </div>
+            )}
+
+            <form onSubmit={handlePlayerSearch}>
+              <div className="auth-field">
+                <label>Nom d'invocateur</label>
+                <input 
+                  type="text" 
+                  placeholder="ex: Ticopy91"
+                  value={gameName}
+                  onChange={(e) => setGameName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="auth-field">
+                <label>Tag</label>
+                <input 
+                  type="text" 
+                  placeholder="ex: Story"
+                  value={tagLine}
+                  onChange={(e) => setTagLine(e.target.value)}
+                  required
+                />
+              </div>
+              <div style={{fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '1rem', textAlign: 'center'}}>
+                Format: pseudo#tag (ex: Ticopy91#Story)
+              </div>
+              <button type="submit" className="btn-primary" disabled={isLoading}>
+                {isLoading ? 'Recherche en cours...' : 'Charger mes données'}
+              </button>
+            </form>
+          </div>
+          <div className="text-muted">Données issues de l'API Riot Games</div>
+        </div>
+      </>
+    )
+  }
+
   return (
     <div id="app">
       {/* SIDEBAR */}
@@ -241,22 +395,21 @@ export default function DashboardPage() {
 
         <div className="sidebar-section">
           <div className="sidebar-label">Champions</div>
-          <div className="nav-item">
-            <span className="nav-icon">⬛</span> Jinx &nbsp;<span style={{fontSize: '0.68rem', color: 'var(--green)'}}>62%</span>
-          </div>
-          <div className="nav-item">
-            <span className="nav-icon">⬛</span> Caitlyn &nbsp;<span style={{fontSize: '0.68rem', color: 'var(--gold)'}}>52%</span>
-          </div>
-          <div className="nav-item">
-            <span className="nav-icon">⬛</span> Ezreal &nbsp;<span style={{fontSize: '0.68rem', color: 'var(--red)'}}>41%</span>
-          </div>
+          {Object.entries(champStats)
+            .sort((a: any, b: any) => b[1].total - a[1].total)
+            .slice(0, 3)
+            .map(([champ, data]: any) => (
+              <div key={champ} className="nav-item">
+                <span className="nav-icon">⬛</span> {champ} &nbsp;<span style={{fontSize: '0.68rem', color: data.winrate >= 50 ? 'var(--green)' : 'var(--red)'}}>{data.winrate}%</span>
+              </div>
+            ))}
         </div>
 
         <div className="sidebar-profile">
-          <div className="profile-avatar">KR</div>
+          <div className="profile-avatar">{playerData?.name?.split('#')[0].substring(0, 2).toUpperCase()}</div>
           <div className="profile-info">
-            <div className="profile-name">KryptoRift</div>
-            <div className="profile-rank">Gold II · 47 LP</div>
+            <div className="profile-name">{playerData?.name}</div>
+            <div className="profile-rank">Niveau {playerData?.level}</div>
           </div>
         </div>
       </aside>
@@ -267,11 +420,10 @@ export default function DashboardPage() {
         <div className="topbar">
           <div>
             <div className="page-title" dangerouslySetInnerHTML={{ __html: pageTitles[currentView as keyof typeof pageTitles] || currentView }}></div>
-            <div style={{fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.2rem'}}>Saison S2025 · 147 parties jouées</div>
+            <div style={{fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.2rem'}}>{playerMatches.length} parties analysées</div>
           </div>
           <div style={{display: 'flex', gap: '0.75rem', alignItems: 'center'}}>
-            <span className="ai-badge">IA Active</span>
-            <button className="sync-btn" onClick={syncMatches}>⟳ &nbsp;Synchroniser</button>
+            <button className="sync-btn" onClick={handleNewSearch} style={{backgroundColor: 'rgba(100, 150, 255, 0.15)', color: 'var(--blue)'}}>🔍 &nbsp;Autre joueur</button>
           </div>
         </div>
 
@@ -281,23 +433,23 @@ export default function DashboardPage() {
           <div className="stats-grid">
             <div className="stat-card" style={{'--accent-color': 'var(--gold)'} as React.CSSProperties}>
               <div className="stat-label">Winrate Global</div>
-              <div className="stat-value">53<span style={{fontSize: '1.2rem', color: 'var(--text-secondary)'}}>%</span></div>
-              <div className="stat-trend trend-up">▲ +4.2% ce mois</div>
+              <div className="stat-value">{stats.winrate}<span style={{fontSize: '1.2rem', color: 'var(--text-secondary)'}}>%</span></div>
+              <div className="stat-trend trend-up">▲ Sur {playerMatches.length} parties</div>
             </div>
             <div className="stat-card" style={{'--accent-color': 'var(--blue)'} as React.CSSProperties}>
               <div className="stat-label">KDA Moyen</div>
-              <div className="stat-value">3.8</div>
-              <div className="stat-trend trend-up">▲ +0.3 sur 20 parties</div>
+              <div className="stat-value">{stats.kda}</div>
+              <div className="stat-trend trend-up">▲ Kill/Assist par mort</div>
             </div>
             <div className="stat-card" style={{'--accent-color': 'var(--green)'} as React.CSSProperties}>
               <div className="stat-label">CS / Minute</div>
-              <div className="stat-value">7.2</div>
-              <div className="stat-trend trend-neutral">→ Stable</div>
+              <div className="stat-value">{stats.csPerMin}</div>
+              <div className="stat-trend trend-neutral">→ Farm moyen</div>
             </div>
             <div className="stat-card" style={{'--accent-color': 'var(--red)'} as React.CSSProperties}>
               <div className="stat-label">Vision Score Moy.</div>
-              <div className="stat-value">24</div>
-              <div className="stat-trend trend-down">▼ -3.1 ce mois</div>
+              <div className="stat-value">{stats.visionScore}</div>
+              <div className="stat-trend trend-down">▼ Score moyen</div>
             </div>
           </div>
 
@@ -309,25 +461,22 @@ export default function DashboardPage() {
               <div className="panel" style={{marginBottom: '1rem'}}>
                 <div className="panel-header">
                   <div className="panel-title">Winrate par Champion</div>
-                  <span className="badge badge-gold">20 dernières parties</span>
+                  <span className="badge badge-gold">{playerMatches.length} parties</span>
                 </div>
                 <div className="panel-body" style={{paddingBottom: '1rem'}}>
-                  <div className="winrate-bar-container">
-                    <div className="winrate-bar-label"><span>⚡ Jinx</span><span style={{color: 'var(--green)'}}>62%</span></div>
-                    <div className="winrate-bar-track"><div className="winrate-bar-fill" style={{width: '62%'}}></div></div>
-                  </div>
-                  <div className="winrate-bar-container">
-                    <div className="winrate-bar-label"><span>🎯 Caitlyn</span><span style={{color: 'var(--gold)'}}>52%</span></div>
-                    <div className="winrate-bar-track"><div className="winrate-bar-fill gold" style={{width: '52%'}}></div></div>
-                  </div>
-                  <div className="winrate-bar-container">
-                    <div className="winrate-bar-label"><span>✨ Ezreal</span><span style={{color: 'var(--red)'}}>41%</span></div>
-                    <div className="winrate-bar-track"><div className="winrate-bar-fill red" style={{width: '41%'}}></div></div>
-                  </div>
-                  <div className="winrate-bar-container">
-                    <div className="winrate-bar-label"><span>💀 Draven</span><span style={{color: 'var(--gold)'}}>55%</span></div>
-                    <div className="winrate-bar-track"><div className="winrate-bar-fill gold" style={{width: '55%'}}></div></div>
-                  </div>
+                  {Object.entries(champStats).length > 0 ? (
+                    Object.entries(champStats)
+                      .sort((a: any, b: any) => b[1].total - a[1].total)
+                      .slice(0, 4)
+                      .map(([champ, data]: any) => (
+                        <div key={champ} className="winrate-bar-container">
+                          <div className="winrate-bar-label"><span>⚡ {champ}</span><span style={{color: data.winrate >= 50 ? 'var(--green)' : 'var(--red)'}}>{data.winrate}%</span></div>
+                          <div className="winrate-bar-track"><div className="winrate-bar-fill" style={{width: `${data.winrate}%`, backgroundColor: data.winrate >= 50 ? 'var(--green)' : 'var(--red)'}}></div></div>
+                        </div>
+                      ))
+                  ) : (
+                    <div style={{color: 'var(--text-secondary)', textAlign: 'center', padding: '1rem'}}>Aucune donnée disponible</div>
+                  )}
                 </div>
               </div>
 
@@ -335,58 +484,36 @@ export default function DashboardPage() {
               <div className="panel">
                 <div className="panel-header">
                   <div className="panel-title">Historique des Parties</div>
-                  <span className="text-muted">10 dernières</span>
+                  <span className="text-muted">{playerMatches.length} dernières</span>
                 </div>
                 <div id="match-list">
-                  {/* Match items will be rendered here */}
-                  <div className="match-item win">
-                    <div className="match-champ">⚡</div>
-                    <div className="match-info">
-                      <div className="match-champ-name">Jinx</div>
-                      <div className="match-meta">ADC · 28m · Il y a 1h</div>
-                    </div>
-                    <div className="match-kda">
-                      <div className="match-kda-val">12/3/8</div>
-                      <div className="match-kda-label">KDA</div>
-                    </div>
-                    <div className="match-kda" style={{minWidth: '60px'}}>
-                      <div className="match-kda-val">8.4</div>
-                      <div className="match-kda-label">CS/min</div>
-                    </div>
-                    <div className="match-result win">Victoire</div>
-                  </div>
-                  <div className="match-item win">
-                    <div className="match-champ">🎯</div>
-                    <div className="match-info">
-                      <div className="match-champ-name">Caitlyn</div>
-                      <div className="match-meta">ADC · 32m · Il y a 3h</div>
-                    </div>
-                    <div className="match-kda">
-                      <div className="match-kda-val">8/2/11</div>
-                      <div className="match-kda-label">KDA</div>
-                    </div>
-                    <div className="match-kda" style={{minWidth: '60px'}}>
-                      <div className="match-kda-val">7.9</div>
-                      <div className="match-kda-label">CS/min</div>
-                    </div>
-                    <div className="match-result win">Victoire</div>
-                  </div>
-                  <div className="match-item loss">
-                    <div className="match-champ">✨</div>
-                    <div className="match-info">
-                      <div className="match-champ-name">Ezreal</div>
-                      <div className="match-meta">ADC · 38m · Il y a 5h</div>
-                    </div>
-                    <div className="match-kda">
-                      <div className="match-kda-val">4/7/3</div>
-                      <div className="match-kda-label">KDA</div>
-                    </div>
-                    <div className="match-kda" style={{minWidth: '60px'}}>
-                      <div className="match-kda-val">6.1</div>
-                      <div className="match-kda-label">CS/min</div>
-                    </div>
-                    <div className="match-result loss">Défaite</div>
-                  </div>
+                  {playerMatches && playerMatches.length > 0 ? (
+                    playerMatches.map((match) => {
+                      const duration = Math.floor(match.duration / 60)
+                      const champEmoji = match.championName ? '⚡' : '?'
+                      
+                      return (
+                        <div key={match.id} className={`match-item ${match.win ? 'win' : 'loss'}`}>
+                          <div className="match-champ">{champEmoji}</div>
+                          <div className="match-info">
+                            <div className="match-champ-name">{match.championName}</div>
+                            <div className="match-meta">{match.role} · {duration}m · Récent</div>
+                          </div>
+                          <div className="match-kda">
+                            <div className="match-kda-val">{match.kills}/{match.deaths}/{match.assists}</div>
+                            <div className="match-kda-label">KDA</div>
+                          </div>
+                          <div className="match-kda" style={{minWidth: '60px'}}>
+                            <div className="match-kda-val">{match.csPerMinute.toFixed(1)}</div>
+                            <div className="match-kda-label">CS/min</div>
+                          </div>
+                          <div className={`match-result ${match.win ? 'win' : 'loss'}`}>{match.win ? 'Victoire' : 'Défaite'}</div>
+                        </div>
+                      )
+                    })
+                  ) : (
+                    <div style={{color: 'var(--text-secondary)', textAlign: 'center', padding: '2rem'}}>Aucune partie trouvée</div>
+                  )}
                 </div>
               </div>
             </div>
