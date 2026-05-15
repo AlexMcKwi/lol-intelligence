@@ -21,6 +21,11 @@ export default function DashboardPage() {
   const [playerMatches, setPlayerMatches] = useState<any[]>([])
   const [searchError, setSearchError] = useState('')
 
+  // Match details state
+  const [selectedMatch, setSelectedMatch] = useState<any>(null)
+  const [selectedMatchDetails, setSelectedMatchDetails] = useState<any>(null)
+  const [loadingMatchDetails, setLoadingMatchDetails] = useState(false)
+
   const pageTitles = {
     dashboard: 'Tableau de <span>Bord</span>',
     insights: 'Insights <span>IA</span>',
@@ -131,6 +136,29 @@ export default function DashboardPage() {
     setGameName('')
     setTagLine('')
     setSearchError('')
+  }
+
+  const handleSelectMatch = async (match: any) => {
+    setSelectedMatch(match)
+    setLoadingMatchDetails(true)
+    setCurrentView('postgame')
+
+    try {
+      const response = await fetch(
+        `/api/match/details?matchId=${match.id}&puuid=${playerData.puuid}`
+      )
+      const data = await response.json()
+
+      if (response.ok) {
+        setSelectedMatchDetails(data.match)
+      } else {
+        console.error("Error loading match details:", data.error)
+      }
+    } catch (error) {
+      console.error("Error fetching match details:", error)
+    } finally {
+      setLoadingMatchDetails(false)
+    }
   }
 
   const showToast = (title: string, body: string) => {
@@ -493,11 +521,20 @@ export default function DashboardPage() {
                       const champEmoji = match.championName ? '⚡' : '?'
                       
                       return (
-                        <div key={match.id} className={`match-item ${match.win ? 'win' : 'loss'}`}>
+                        <div 
+                          key={match.id} 
+                          className={`match-item ${match.win ? 'win' : 'loss'}`}
+                          onClick={() => handleSelectMatch(match)}
+                          style={{cursor: 'pointer', transition: 'opacity 0.2s'}}
+                          onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                          onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                        >
                           <div className="match-champ">{champEmoji}</div>
                           <div className="match-info">
                             <div className="match-champ-name">{match.championName}</div>
-                            <div className="match-meta">{match.role} · {duration}m · Récent</div>
+                            <div className="match-meta" style={{fontSize: '0.78rem', color: 'var(--text-secondary)'}}>
+                              {match.joke || `${match.role} · ${duration}m`}
+                            </div>
                           </div>
                           <div className="match-kda">
                             <div className="match-kda-val">{match.kills}/{match.deaths}/{match.assists}</div>
@@ -722,91 +759,87 @@ export default function DashboardPage() {
 
         {/* POST-GAME VIEW */}
         <div className={`view ${currentView === 'postgame' ? 'active' : ''}`}>
-          <div className="postgame-hero">
-            <div className="postgame-score">
-              <div>
-                <div className="postgame-result">VICTOIRE</div>
-                <div style={{fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.25rem'}}>Jinx · ADC · 28 min · Ranked SoloQ</div>
-              </div>
-              <div className="postgame-stats-row">
-                <div className="pgstat">
-                  <div className="pgstat-val">12/3/8</div>
-                  <div className="pgstat-label">KDA</div>
-                </div>
-                <div className="pgstat">
-                  <div className="pgstat-val">8.4</div>
-                  <div className="pgstat-label">CS/min</div>
-                </div>
-                <div className="pgstat">
-                  <div className="pgstat-val">38</div>
-                  <div className="pgstat-label">Vision</div>
-                </div>
-                <div className="pgstat">
-                  <div className="pgstat-val">32k</div>
-                  <div className="pgstat-label">Dégâts</div>
-                </div>
-              </div>
+          {loadingMatchDetails ? (
+            <div style={{textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)'}}>
+              <div style={{fontSize: '1.2rem', marginBottom: '1rem'}}>Chargement des détails du match...</div>
+              <div className="loading-bar"></div>
             </div>
-            <div className="postgame-summary">
-              "Excellente phase de lane avec un avantage gold établi dès 8 min. Bonne gestion du teamfight à 22 min sur Dragon. Cependant, faible présence map après 20 min — la victoire a failli basculer grâce à des picks évitables en river."
-            </div>
-          </div>
+          ) : selectedMatchDetails ? (
+            <>
+              <div className="postgame-hero">
+                <div className="postgame-score">
+                  <div>
+                    <div className="postgame-result" style={{color: selectedMatchDetails.summary.result === 'Victoire' ? 'var(--green)' : 'var(--red)'}}>
+                      {selectedMatchDetails.summary.result.toUpperCase()}
+                    </div>
+                    <div style={{fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.25rem'}}>
+                      {selectedMatchDetails.summary.champion} · {selectedMatchDetails.summary.role} · {selectedMatchDetails.summary.duration}
+                    </div>
+                  </div>
+                  <div className="postgame-stats-row">
+                    <div className="pgstat">
+                      <div className="pgstat-val">{selectedMatchDetails.summary.kda}</div>
+                      <div className="pgstat-label">KDA</div>
+                    </div>
+                    <div className="pgstat">
+                      <div className="pgstat-val">{selectedMatchDetails.summary.csPerMin}</div>
+                      <div className="pgstat-label">CS/min</div>
+                    </div>
+                    <div className="pgstat">
+                      <div className="pgstat-val">{selectedMatchDetails.summary.visionScore}</div>
+                      <div className="pgstat-label">Vision</div>
+                    </div>
+                    <div className="pgstat">
+                      <div className="pgstat-val">{selectedMatchDetails.summary.damage}</div>
+                      <div className="pgstat-label">Dégâts</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="postgame-summary">
+                  "{selectedMatchDetails.summary.performance}"
+                </div>
+              </div>
 
-          <div className="postgame-grid">
-            <div className="feedback-card">
-              <div className="feedback-type" style={{color: 'var(--green)'}}>
-                <div className="feedback-dot" style={{'--dot-color': 'var(--green)'} as React.CSSProperties}></div>
-                Points Forts
-              </div>
-              <div className="feedback-text">
-                <div style={{marginBottom: '0.5rem'}}>✓ Phase de lane dominante (CS+42 à 10 min)</div>
-                <div style={{marginBottom: '0.5rem'}}>✓ Positionnement exemplaire en teamfight</div>
-                <div>✓ Bonne utilisation de Zap! pour sécuriser les kills</div>
-              </div>
-            </div>
+              <div className="postgame-grid">
+                {selectedMatchDetails.insights && selectedMatchDetails.insights.length > 0 ? (
+                  selectedMatchDetails.insights.map((insight: any, idx: number) => {
+                    const colors = {
+                      warning: { color: 'var(--red)', bg: 'rgba(232,64,87,0.1)' },
+                      positive: { color: 'var(--green)', bg: 'rgba(62,232,160,0.1)' },
+                      info: { color: 'var(--blue)', bg: 'rgba(11,196,227,0.1)' }
+                    }
+                    const style = colors[insight.type as keyof typeof colors] || colors.info
 
-            <div className="feedback-card" style={{borderColor: 'rgba(232,64,87,0.2)'}}>
-              <div className="feedback-type" style={{color: 'var(--red)'}}>
-                <div className="feedback-dot" style={{'--dot-color': 'var(--red)'} as React.CSSProperties}></div>
-                Erreur Principale
+                    return (
+                      <div key={idx} className="feedback-card" style={{borderColor: style.bg}}>
+                        <div className="feedback-type" style={{color: style.color}}>
+                          <div className="feedback-dot" style={{'--dot-color': style.color} as React.CSSProperties}></div>
+                          {insight.title}
+                        </div>
+                        <div className="feedback-text">
+                          <div style={{marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.85rem'}}>
+                            {insight.body}
+                          </div>
+                          <div style={{color: style.color, fontWeight: '500', fontSize: '0.9rem'}}>
+                            {insight.recommendation}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })
+                ) : (
+                  <div style={{gridColumn: '1 / -1', color: 'var(--text-secondary)', textAlign: 'center', padding: '2rem'}}>
+                    Aucun insight généré pour ce match
+                  </div>
+                )}
               </div>
-              <div className="feedback-text">
-                Aucune ward placée avant les tentatives de Dragon (22 min, 26 min). Tu as failli perdre sur un pick évitable en river bush à 24 min.
-              </div>
+            </>
+          ) : (
+            <div style={{textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)'}}>
+              <div style={{fontSize: '1.2rem', marginBottom: '1rem'}}>Sélectionne une partie pour voir l'analyse</div>
+              <div style={{fontSize: '0.9rem'}}>Clique sur une partie dans l'historique pour afficher les détails</div>
             </div>
-
-            <div className="feedback-card" style={{borderColor: 'rgba(11,196,227,0.2)'}}>
-              <div className="feedback-type" style={{color: 'var(--blue)'}}>
-                <div className="feedback-dot" style={{'--dot-color': 'var(--blue)'} as React.CSSProperties}></div>
-                Recommandation IA
-              </div>
-              <div className="feedback-text">
-                <strong style={{color: 'var(--blue)'}}>Priorité #1 :</strong> Intègre l'automatisme "ward river à 19 min". Ça t'a coûté une victoire facile. C'est le seul axe de travail cette semaine.
-              </div>
-            </div>
-          </div>
-
-          {/* Historique post-games */}
-          <div className="panel">
-            <div className="panel-header">
-              <div className="panel-title">Parties Récentes Analysées</div>
-              <span className="ai-badge">IA</span>
-            </div>
-            <div id="postgame-list">
-              <div className="match-item win" style={{cursor: 'default'}}>
-                <div className="match-champ">⚡</div>
-                <div className="match-info">
-                  <div className="match-champ-name">Jinx</div>
-                  <div className="match-meta" style={{color: 'var(--text-secondary)', fontSize: '0.78rem'}}>Bonne lane, faible vision obj.</div>
-                </div>
-                <div className="match-kda" style={{textAlign: 'right', minWidth: '70px'}}>
-                  <div style={{fontFamily: "'Rajdhani', sans-serif", fontSize: '1.2rem', fontWeight: '700', color: 'var(--green)'}}>82</div>
-                  <div className="match-kda-label">Score IA</div>
-                </div>
-                <div className="match-result win">Victoire</div>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* PROGRESSION VIEW */}

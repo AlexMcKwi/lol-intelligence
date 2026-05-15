@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getAccountByGameName, getSummonerByPuuid } from "@/lib/riot/client"
 import { getMatchIds, getMatch } from "@/lib/riot/matches"
 import { parseParticipant } from "@/lib/riot/parser"
+import { getMainInsightJoke } from "@/lib/riot/insights"
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
@@ -36,12 +37,14 @@ export async function GET(req: Request) {
         try {
           const match = await getMatch(matchId)
           const parsed = parseParticipant(match, account.puuid)
+          const joke = getMainInsightJoke(match, account.puuid)
           
           return {
             id: matchId,
             ...parsed,
             timestamp: match.info.gameCreation,
-            duration: match.info.gameDuration
+            duration: match.info.gameDuration,
+            joke
           }
         } catch (error) {
           console.error(`Error parsing match ${matchId}:`, error)

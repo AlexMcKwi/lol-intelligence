@@ -1,184 +1,184 @@
 const insights = [
   {
-    title: "Poor lead conversion",
-    description: "You frequently lose games despite building an early advantage.",
+    title: "Mauvaise conversion d’avantage",
+    description: "Vous perdez fréquemment des parties malgré un avantage obtenu en début de jeu.",
     severity: "High",
-    joke: "You treat a gold lead like a limited-time offer."
+    joke: "Vous traitez votre avance en gold comme une offre à durée limitée."
   },
   {
-    title: "Overaggression detected",
-    description: "Your death count is consistently reducing your mid-game impact.",
+    title: "Suragressivité détectée",
+    description: "Votre nombre de morts réduit régulièrement votre impact en milieu de partie.",
     severity: "Medium",
-    joke: "The enemy team appreciates your donations."
+    joke: "L’équipe ennemie apprécie vos donations."
   },
   {
-    title: "Low map control",
-    description: "Your vision contribution is below average for your role.",
+    title: "Faible contrôle de carte",
+    description: "Votre contribution à la vision est inférieure à la moyenne pour votre rôle.",
     severity: "High",
-    joke: "Your minimap is apparently decorative."
+    joke: "Votre minimap semble purement décorative."
   },
   {
-    title: "Weak laning phase",
-    description: "You regularly fall behind in gold and experience before 15 minutes.",
+    title: "Phase de lane faible",
+    description: "Vous êtes régulièrement en retard en gold et en expérience avant 15 minutes.",
     severity: "High",
-    joke: "At this point your lane opponent should send you a thank-you note."
+    joke: "À ce stade, votre adversaire de lane devrait vous envoyer une lettre de remerciement."
   },
   {
-    title: "Inefficient farming",
-    description: "Your CS per minute is significantly below players at your rank.",
+    title: "Farm inefficace",
+    description: "Votre CS par minute est nettement inférieur à celui des joueurs de votre rang.",
     severity: "Medium",
-    joke: "Even cannon minions are escaping you."
+    joke: "Même les sbires canon réussissent à vous échapper."
   },
   {
-  title: "Objective neglect",
-  description: "Your participation around dragons and heralds is too low.",
-  severity: "High",
-  joke: "You treat objectives like optional side quests."
-},
-{
-  title: "Late rotation timing",
-  description: "You often arrive late to critical fights and objectives.",
-  severity: "Medium",
-  joke: "You rotate like you're still buffering."
-},
-{
-  title: "Excessive solo deaths",
-  description: "You are frequently caught alone before major objectives spawn.",
-  severity: "High",
-  joke: "Your team sees 'An ally has been slain' more than the scoreboard."
-},
-{
-  title: "Low damage efficiency",
-  description: "Your gold income is not translating into meaningful teamfight impact.",
-  severity: "Medium",
-  joke: "All that farm just to tickle the frontline."
-},
-{
-  title: "Weak teamfight positioning",
-  description: "You are frequently eliminated early in coordinated fights.",
-  severity: "High",
-  joke: "Your positioning says 'highlight reel', but for the enemy team."
-},
-{
-  title: "Passive early game",
-  description: "You generate very little pressure during the first 10 minutes.",
-  severity: "Low",
-  joke: "The enemy laner forgot you existed."
-},
-{
-  title: "Roaming inefficiency",
-  description: "Your roams rarely convert into kills, assists, or objectives.",
-  severity: "Medium",
-  joke: "You roam like a tourist with no destination."
-},
-{
-  title: "Vision denial missing",
-  description: "You destroy fewer enemy wards than expected for your role.",
-  severity: "Low",
-  joke: "Enemy wards have longer lifespans than some ADCs."
-},
-{
-  title: "Inconsistent carry impact",
-  description: "Your performance drops sharply in games where your team falls behind.",
-  severity: "Medium",
-  joke: "You only carry under laboratory conditions."
-},
-{
-  title: "Objective overforcing",
-  description: "You frequently contest objectives in low-probability situations.",
-  severity: "High",
-  joke: "Every dragon fight becomes a true crime documentary."
-},
-{
-  title: "Limited champion consistency",
-  description: "Your win rate varies heavily between champions in your pool.",
-  severity: "Medium",
-  joke: "Your champion pool is more like a randomizer."
-},
-{
-  title: "Underutilized vision windows",
-  description: "You place too few wards before neutral objectives spawn.",
-  severity: "Medium",
-  joke: "Your support item is basically cosmetic."
-},
-{
-  title: "Poor sidelane management",
-  description: "Your wave control in side lanes often creates pressure against your team.",
-  severity: "High",
-  joke: "You splitpush like a paid actor for the enemy macro."
-},
-{
-  title: "Low kill participation",
-  description: "You are absent from too many successful team plays.",
-  severity: "Medium",
-  joke: "Your teammates see you mostly in post-game lobby."
-},
-{
-  title: "Weak scaling execution",
-  description: "Your impact does not improve enough in late-game situations.",
-  severity: "Medium",
-  joke: "Late game arrives and somehow you still haven't."
-},
-{
-  title: "High unforced errors",
-  description: "Mechanical mistakes are creating avoidable disadvantages.",
-  severity: "High",
-  joke: "Your keyboard is filing for workplace abuse."
-},
-{
-  title: "Poor recall timing",
-  description: "Your reset timings frequently cost lane pressure and resources.",
-  severity: "Low",
-  joke: "You recall like you're late for dinner."
-},
-{
-  title: "Limited objective setup",
-  description: "Your team rarely controls vision before major neutral fights.",
-  severity: "High",
-  joke: "Your Baron setups are basically surprise parties for the enemy."
-},
-{
-  title: "Resource allocation issues",
-  description: "You spend too much time sharing farm instead of maximizing income.",
-  severity: "Medium",
-  joke: "Your CS income is a charity program."
-},
-{
-  title: "Weak early trading",
-  description: "You lose a high percentage of lane trades in the first levels.",
-  severity: "Medium",
-  joke: "You trade HP like it's on clearance."
-},
-{
-  title: "Tower pressure lacking",
-  description: "You rarely convert kills into turret damage.",
-  severity: "Medium",
-  joke: "Turrets are safer around you than in fountain."
-},
-{
-  title: "Predictable pathing",
-  description: "Your movements are frequently anticipated by opponents.",
-  severity: "Low",
-  joke: "Even the enemy support knows your next move."
-},
-{
-  title: "Risky ward placement",
-  description: "You often die while attempting to establish vision.",
-  severity: "Medium",
-  joke: "You ward like a horror movie side character."
-},
-{
-  title: "Low jungle proximity awareness",
-  description: "You are frequently punished by enemy jungle pressure.",
-  severity: "High",
-  joke: "Enemy junglers see your lane as free real estate."
-},
-{
-  title: "Unstable laning consistency",
-  description: "Your early-game performance fluctuates heavily between matches.",
-  severity: "Medium",
-  joke: "Your lane phase is decided by coinflip physics."
-}
+    title: "Négligence des objectifs",
+    description: "Votre participation autour des dragons et des hérauts est trop faible.",
+    severity: "High",
+    joke: "Vous traitez les objectifs comme des quêtes secondaires optionnelles."
+  },
+  {
+    title: "Rotations trop lentes",
+    description: "Vous arrivez souvent en retard aux combats et objectifs importants.",
+    severity: "Medium",
+    joke: "Vous effectuez vos rotations comme si vous étiez encore en chargement."
+  },
+  {
+    title: "Trop de morts en solo",
+    description: "Vous vous faites fréquemment attraper seul avant l’apparition des objectifs majeurs.",
+    severity: "High",
+    joke: "Votre équipe entend 'Un allié a été tué' plus souvent qu’elle ne regarde le scoreboard."
+  },
+  {
+    title: "Faible efficacité des dégâts",
+    description: "Vos revenus en gold ne se traduisent pas par un impact significatif en teamfight.",
+    severity: "Medium",
+    joke: "Tout ce farm juste pour chatouiller la frontline."
+  },
+  {
+    title: "Mauvais positionnement en teamfight",
+    description: "Vous êtes fréquemment éliminé tôt dans les combats coordonnés.",
+    severity: "High",
+    joke: "Votre positionnement ressemble à un highlight… mais pour l’équipe ennemie."
+  },
+  {
+    title: "Début de partie passif",
+    description: "Vous générez très peu de pression durant les 10 premières minutes.",
+    severity: "Low",
+    joke: "Votre adversaire de lane avait oublié votre existence."
+  },
+  {
+    title: "Roaming inefficace",
+    description: "Vos roams se convertissent rarement en kills, assists ou objectifs.",
+    severity: "Medium",
+    joke: "Vous roam comme un touriste sans destination."
+  },
+  {
+    title: "Manque de denial de vision",
+    description: "Vous détruisez moins de wards ennemies que prévu pour votre rôle.",
+    severity: "Low",
+    joke: "Les wards ennemies vivent plus longtemps que certains ADC."
+  },
+  {
+    title: "Impact carry irrégulier",
+    description: "Vos performances chutent fortement lorsque votre équipe est en retard.",
+    severity: "Medium",
+    joke: "Vous ne carry que dans des conditions de laboratoire."
+  },
+  {
+    title: "Forçage excessif des objectifs",
+    description: "Vous contestez fréquemment des objectifs dans des situations à faible probabilité de réussite.",
+    severity: "High",
+    joke: "Chaque fight de dragon devient un documentaire criminel."
+  },
+  {
+    title: "Pool de champions peu stable",
+    description: "Votre taux de victoire varie fortement selon les champions joués.",
+    severity: "Medium",
+    joke: "Votre champion pool ressemble davantage à un randomizer."
+  },
+  {
+    title: "Fenêtres de vision sous-exploitées",
+    description: "Vous placez trop peu de wards avant l’apparition des objectifs neutres.",
+    severity: "Medium",
+    joke: "Votre item support est essentiellement cosmétique."
+  },
+  {
+    title: "Mauvaise gestion des sidelanes",
+    description: "Votre contrôle des vagues en sidelane crée souvent de la pression contre votre équipe.",
+    severity: "High",
+    joke: "Vous splitpush comme un acteur payé par le macro adverse."
+  },
+  {
+    title: "Faible participation aux kills",
+    description: "Vous êtes absent de trop nombreuses actions d’équipe réussies.",
+    severity: "Medium",
+    joke: "Vos coéquipiers vous voient surtout dans le lobby post-game."
+  },
+  {
+    title: "Scaling mal exploité",
+    description: "Votre impact n’augmente pas suffisamment en late game.",
+    severity: "Medium",
+    joke: "Le late game arrive… et vous toujours pas."
+  },
+  {
+    title: "Trop d’erreurs non forcées",
+    description: "Des erreurs mécaniques créent des désavantages évitables.",
+    severity: "High",
+    joke: "Votre clavier envisage de porter plainte pour maltraitance."
+  },
+  {
+    title: "Mauvais timing de recall",
+    description: "Vos resets coûtent fréquemment de la pression de lane et des ressources.",
+    severity: "Low",
+    joke: "Vous recall comme si vous étiez en retard pour dîner."
+  },
+  {
+    title: "Préparation d’objectifs insuffisante",
+    description: "Votre équipe contrôle rarement la vision avant les combats neutres importants.",
+    severity: "High",
+    joke: "Vos setups Baron ressemblent à des fêtes surprises pour l’équipe ennemie."
+  },
+  {
+    title: "Problèmes d’allocation des ressources",
+    description: "Vous passez trop de temps à partager le farm au lieu de maximiser vos revenus.",
+    severity: "Medium",
+    joke: "Votre revenu en CS ressemble à un programme caritatif."
+  },
+  {
+    title: "Trades précoces faibles",
+    description: "Vous perdez un pourcentage élevé d’échanges durant les premiers niveaux.",
+    severity: "Medium",
+    joke: "Vous échangez vos PV comme s’ils étaient en promotion."
+  },
+  {
+    title: "Manque de pression sur les tours",
+    description: "Vous convertissez rarement vos kills en dégâts sur les tourelles.",
+    severity: "Medium",
+    joke: "Les tourelles sont plus en sécurité avec vous qu’à la fontaine."
+  },
+  {
+    title: "Pathing prévisible",
+    description: "Vos déplacements sont fréquemment anticipés par les adversaires.",
+    severity: "Low",
+    joke: "Même le support ennemi connaît votre prochain mouvement."
+  },
+  {
+    title: "Placement de wards risqué",
+    description: "Vous mourez souvent en essayant d’établir de la vision.",
+    severity: "Medium",
+    joke: "Vous wardez comme un personnage secondaire dans un film d’horreur."
+  },
+  {
+    title: "Faible awareness de la jungle",
+    description: "Vous êtes fréquemment puni par la pression du jungler adverse.",
+    severity: "High",
+    joke: "Les junglers ennemis considèrent votre lane comme un bien immobilier gratuit."
+  },
+  {
+    title: "Inconstance en phase de lane",
+    description: "Vos performances en début de partie varient fortement d’un match à l’autre.",
+    severity: "Medium",
+    joke: "Votre phase de lane est décidée par les lois de la pièce lancée."
+  }
 ]
 
 

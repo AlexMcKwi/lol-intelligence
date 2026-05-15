@@ -12,3 +12,7 @@ export async function getMatchIds(puuid: string) {
 export async function getMatch(matchId: string) {
   return riotFetch(`lol/match/v5/matches/${matchId}`, RIOT_API)
 }
+
+export async function getMatchTimeline(matchId: string) {
+  return riotFetch(`lol/match/v5/matches/${matchId}/timeline`, RIOT_API)
+}
