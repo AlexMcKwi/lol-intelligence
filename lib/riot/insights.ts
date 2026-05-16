@@ -361,3 +361,150 @@ export function getMainInsightJoke(match: any, puuid: string): string {
   
   return "Prochaine fois sera meilleure!"
 }
+
+/**
+ * Adapte une joke existante au contexte du match spécifique en utilisant OpenAI
+ * Génère une variante amusante basée sur les stats du joueur
+ */
+export async function adaptJokeWithContext(
+  originalJoke: string,
+  match: any,
+  puuid: string,
+  insightType: string
+): Promise<string> {
+  const OpenAI = (await import("openai")).default
+  
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+  })
+
+  const participant = match.info.participants.find(
+    (p: any) => p.puuid === puuid
+  )
+
+  if (!participant) {
+    return originalJoke
+  }
+
+  const gameDuration = Math.floor(match.info.gameDuration / 60)
+  const csPerMin = participant.totalMinionsKilled / (match.info.gameDuration / 60)
+
+  const prompt = `Tu es un coach League of Legends qui fait des blagues amusantes et sarcastiques pour aider les joueurs à s'améliorer.
+
+Crée une variante NOUVELLE et DIFFÉRENTE de cette blague basée sur les stats du joueur:
+Blague originale: "${originalJoke}"
+
+Stats du match:
+- Champion: ${participant.championName}
+- KDA: ${participant.kills}/${participant.deaths}/${participant.assists}
+- CS/min: ${csPerMin.toFixed(1)}
+- Gold: ${Math.round(participant.goldEarned / 1000)}k
+- Dégâts: ${Math.round(participant.totalDamageDealtToChampions / 1000)}k
+- Durée: ${gameDuration}min
+- Type d'insight: ${insightType}
+- Résultat: ${participant.win ? "Victoire" : "Défaite"}
+
+Règles:
+1. La blague doit être DRÔLE et SARCASTIQUE
+2. Doit être en français
+3. Doit respecter les stats spécifiques du match
+4. Doit être courte (1-2 phrases max)
+5. Évite de répéter la blague originale exactement
+
+Retourne UNIQUEMENT la blague adaptée, rien d'autre.`
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-3.5-turbo",
+    messages: [
+      {
+        role: "user",
+        content: prompt
+      }
+    ],
+    temperature: 0.8,
+    max_tokens: 100
+  })
+
+  const adaptedJoke = response.choices[0].message.content?.trim() || originalJoke
+  return adaptedJoke
+}
+
+/**
+ * Traite un ensemble d'insights de plusieurs matches et adapte les jokes dupliquées
+ * Détecte quand la même joke se répète et la customise pour chaque match
+ */
+export async function deduplicateAndAdaptJokes(
+  matchesWithInsights: Array<{ match: any; insights: any[]; puuid: string }>
+): Promise<Array<{ match: any; insights: any[]; puuid: string }>> {
+  // Créer une map pour tracker les jokes par contenu
+  const jokeFrequency = new Map<string, Array<number>>()
+  const allInsights: any[] = []
+
+  // Compter les occurrences de chaque joke
+  matchesWithInsights.forEach((item, matchIndex) => {
+    item.insights.forEach((insight) => {
+      if (insight.joke) {
+        allInsights.push({
+          joke: insight.joke,
+          matchIndex,
+          insightIndex: item.insights.indexOf(insight),
+          insight
+        })
+
+        if (!jokeFrequency.has(insight.joke)) {
+          jokeFrequency.set(insight.joke, [])
+        }
+        jokeFrequency.get(insight.joke)!.push(matchIndex)
+      }
+    })
+  })
+
+  // Identifier les jokes qui se répètent (au moins 2 fois)
+  const duplicatedJokes = Array.from(jokeFrequency.entries())
+    .filter(([, matches]) => matches.length >= 2)
+    .map(([joke]) => joke)
+
+  // Si aucune duplication, retourner tel quel
+  if (duplicatedJokes.length === 0) {
+    return matchesWithInsights
+  }
+
+  // Pour chaque joke dupliquée, adapter les occurrences (sauf la première)
+  const result = structuredClone(matchesWithInsights)
+
+  for (const duplicatedJoke of duplicatedJokes) {
+    const matchIndices = jokeFrequency.get(duplicatedJoke)!
+    
+    // Adapter les occurrences à partir de la deuxième (index 1+)
+    for (let i = 1; i < matchIndices.length; i++) {
+      const matchIndex = matchIndices[i]
+      const matchItem = result[matchIndex]
+      const insightWithDupJoke = matchItem.insights.find(
+        (insight) => insight.joke === duplicatedJoke
+      )
+
+      if (insightWithDupJoke) {
+        try {
+          console.log(
+            `Adaptant joke dupliquée pour match ${matchIndex}: "${duplicatedJoke}"`
+          )
+          
+          const adaptedJoke = await adaptJokeWithContext(
+            duplicatedJoke,
+            matchItem.match,
+            matchItem.puuid,
+            insightWithDupJoke.title || "performance"
+          )
+
+          insightWithDupJoke.joke = adaptedJoke
+          insightWithDupJoke.isAdapted = true
+        } catch (error) {
+          console.error(`Erreur lors de l'adaptation de la joke: ${error}`)
+          // Garder la joke originale en cas d'erreur
+        }
+      }
+    }
+  }
+
+  return result
+}

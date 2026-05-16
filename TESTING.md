@@ -162,29 +162,61 @@ Tests for the `generatePostGameSummary()` function that generates AI-powered pos
 
 ---
 
-### 5. Insights API Route (`app/api/insights/route.test.ts`)
+### 5. Riot Insights (`lib/riot/insights.test.ts`)
 
-Tests for the GET endpoint that retrieves user insights.
+Tests for match performance analysis and joke deduplication.
+
+**Test Cases:**
+- High death count detection
+- Multiple insights generation
+- Joke inclusion in insights
+- Victory message for winning games
+- First insight joke retrieval
+- Duplicate joke detection (2+ occurrences)
+- Non-duplicate insights preservation
+- Empty insights handling
+- Joke adaptation via OpenAI
+- Adapted joke marking with `isAdapted` flag
+- Multiple jokes in single insight
+- Participant not found handling
+- Original joke fallback on error
+
+**Key Assertions:**
+- Insights contain joke property
+- Duplicates detected correctly
+- First occurrence unchanged
+- Second+ occurrences adapted via OpenAI
+- `isAdapted` flag set correctly
+- Error handling preserves original joke
+
+---
+
+### 6. Insights API Route (`app/api/insights/route.test.ts`)
+
+Tests for the GET endpoint that retrieves user insights with joke deduplication.
 
 **Test Cases:**
 - Insights retrieval for given user
 - Match ordering (descending by creation date)
 - Result limiting (20 matches max)
-- JSON response format
+- JSON response format with `matchInsights` and `aggregatedInsights`
 - Empty match history handling
 - Correct userId query parameter parsing
 - Multiple insights handling
+- Duplicate joke adaptation
+- Response structure validation
 
 **Key Assertions:**
-- `findMany` called with correct filters
+- `findMany` called with correct filters and `include: { match: true }`
 - Results ordered by `createdAt: 'desc'`
 - `take: 20` limit applied
-- Response is JSON
-- Empty array for new users
+- Response contains `{ matchInsights: [], aggregatedInsights: [] }`
+- `deduplicateAndAdaptJokes` called for adaptation
+- `analyzeMatchPerformance` called for each match
 
 ---
 
-### 6. Sync API Route (`app/api/sync/route.test.ts`)
+### 7. Sync API Route (`app/api/sync/route.test.ts`)
 
 Tests for the POST endpoint that syncs matches from Riot API.
 
@@ -208,7 +240,7 @@ Tests for the POST endpoint that syncs matches from Riot API.
 
 ---
 
-### 7. Test API Route (`app/api/test/route.test.ts`)
+### 8. Test API Route (`app/api/test/route.test.ts`)
 
 Tests for the GET endpoint that checks Riot API status.
 
