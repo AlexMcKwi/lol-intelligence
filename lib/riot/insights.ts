@@ -363,6 +363,50 @@ export function getMainInsightJoke(match: any, puuid: string): string {
 }
 
 /**
+ * Calcule la similarité entre deux strings (0-1)
+ * Utilisé pour détecter les doublons approximatifs
+ */
+function calculateSimilarity(str1: string, str2: string): number {
+  const s1 = str1.toLowerCase().trim()
+  const s2 = str2.toLowerCase().trim()
+
+  if (s1 === s2) return 1
+
+  // Levenshtein-like distance calculation
+  const longer = s1.length > s2.length ? s1 : s2
+  const shorter = s1.length > s2.length ? s2 : s1
+
+  if (longer.length === 0) return 1.0
+
+  const editDistance = getEditDistance(longer, shorter)
+  return (longer.length - editDistance) / longer.length
+}
+
+/**
+ * Calcule la distance d'édition (Levenshtein)
+ */
+function getEditDistance(s1: string, s2: string): number {
+  const costs: number[] = []
+  for (let i = 0; i <= s1.length; i++) {
+    let lastValue = i
+    for (let j = 0; j <= s2.length; j++) {
+      if (i === 0) {
+        costs[j] = j
+      } else if (j > 0) {
+        let newValue = costs[j - 1]
+        if (s1.charAt(i - 1) !== s2.charAt(j - 1)) {
+          newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1
+        }
+        costs[j - 1] = lastValue
+        lastValue = newValue
+      }
+    }
+    if (i > 0) costs[s2.length] = lastValue
+  }
+  return costs[s2.length]
+}
+
+/**
  * Adapte une joke existante au contexte du match spécifique en utilisant OpenAI
  * Génère une variante amusante basée sur les stats du joueur
  */
@@ -436,32 +480,24 @@ Retourne UNIQUEMENT la blague adaptée, rien d'autre.`
 export async function deduplicateAndAdaptJokes(
   matchesWithInsights: Array<{ match: any; insights: any[]; puuid: string }>
 ): Promise<Array<{ match: any; insights: any[]; puuid: string }>> {
-  // Créer une map pour tracker les jokes par contenu
-  const jokeFrequency = new Map<string, Array<number>>()
-  const allInsights: any[] = []
+  // Créer une map pour tracker les jokes par contenu (correspondance exacte)
+  const jokeFrequency = new Map<string, Array<{ matchIndex: number; insightIndex: number }>>()
 
-  // Compter les occurrences de chaque joke
+  // Compter les occurrences de chaque joke (correspondance exacte)
   matchesWithInsights.forEach((item, matchIndex) => {
-    item.insights.forEach((insight) => {
+    item.insights.forEach((insight, insightIndex) => {
       if (insight.joke) {
-        allInsights.push({
-          joke: insight.joke,
-          matchIndex,
-          insightIndex: item.insights.indexOf(insight),
-          insight
-        })
-
         if (!jokeFrequency.has(insight.joke)) {
           jokeFrequency.set(insight.joke, [])
         }
-        jokeFrequency.get(insight.joke)!.push(matchIndex)
+        jokeFrequency.get(insight.joke)!.push({ matchIndex, insightIndex })
       }
     })
   })
 
-  // Identifier les jokes qui se répètent (au moins 2 fois)
+  // Identifier les jokes qui se répètent (au moins 2 fois - correspondance exacte)
   const duplicatedJokes = Array.from(jokeFrequency.entries())
-    .filter(([, matches]) => matches.length >= 2)
+    .filter(([, occurrences]) => occurrences.length >= 2)
     .map(([joke]) => joke)
 
   // Si aucune duplication, retourner tel quel
@@ -473,17 +509,15 @@ export async function deduplicateAndAdaptJokes(
   const result = structuredClone(matchesWithInsights)
 
   for (const duplicatedJoke of duplicatedJokes) {
-    const matchIndices = jokeFrequency.get(duplicatedJoke)!
+    const occurrences = jokeFrequency.get(duplicatedJoke)!
     
     // Adapter les occurrences à partir de la deuxième (index 1+)
-    for (let i = 1; i < matchIndices.length; i++) {
-      const matchIndex = matchIndices[i]
+    for (let i = 1; i < occurrences.length; i++) {
+      const { matchIndex, insightIndex } = occurrences[i]
       const matchItem = result[matchIndex]
-      const insightWithDupJoke = matchItem.insights.find(
-        (insight) => insight.joke === duplicatedJoke
-      )
+      const insight = matchItem.insights[insightIndex]
 
-      if (insightWithDupJoke) {
+      if (insight && insight.joke === duplicatedJoke) {
         try {
           console.log(
             `Adaptant joke dupliquée pour match ${matchIndex}: "${duplicatedJoke}"`
@@ -493,11 +527,11 @@ export async function deduplicateAndAdaptJokes(
             duplicatedJoke,
             matchItem.match,
             matchItem.puuid,
-            insightWithDupJoke.title || "performance"
+            insight.title || "performance"
           )
 
-          insightWithDupJoke.joke = adaptedJoke
-          insightWithDupJoke.isAdapted = true
+          insight.joke = adaptedJoke
+          insight.isAdapted = true
         } catch (error) {
           console.error(`Erreur lors de l'adaptation de la joke: ${error}`)
           // Garder la joke originale en cas d'erreur
