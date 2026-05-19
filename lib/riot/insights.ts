@@ -474,6 +474,57 @@ Retourne UNIQUEMENT la blague adaptée, rien d'autre.`
 }
 
 /**
+ * Pool de jokes alternatives pour les doublons
+ * Utilisé en fallback si l'adaptation OpenAI échoue
+ */
+const ALTERNATIVE_JOKES: Record<string, string[]> = {
+  "L'équipe ennemie apprécie vos donations.": [
+    "Vous avez un don naturel pour transférer votre gold à l'adversaire.",
+    "Vous jouez comme si votre équipe vous avait oublié sur le terrain.",
+    "Vos morts sont plus fréquentes que vos kills.",
+    "Vous êtes un personnage de rôle qui joue le rôle du cadeau.",
+    "Les respawns devraient avoir une caméra suivant votre parcours.",
+  ],
+  "Votre minimap semble purement décorative.": [
+    "Vous regardez la minimap comme un artiste regarde un tableau abstrait.",
+    "La vision est un concept que vous comprenez mais n'appliquez pas.",
+    "Vous placez des wards pour décorer, pas pour voir.",
+  ],
+  "À ce stade, votre adversaire de lane devrait vous envoyer une lettre de remerciement.": [
+    "Votre lane opponent savait déjà qu'il avait gagné au champ de sélection.",
+    "Vous avez rendu le lane phase tellement facile qu'on se demande pourquoi vous êtes là.",
+  ],
+  "Même les sbires canon réussissent à vous échapper.": [
+    "Vous farming comme si les sbires avaient une dette envers vous.",
+    "Vos chiffres CS ressemblent à un score de tennis.",
+    "Vous avez trouvé une nouvelle définition du terme 'farming'.",
+  ],
+}
+
+/**
+ * Sélectionne une joke alternative parmi le pool
+ */
+function getAlternativeJoke(originalJoke: string, usedAlternatives: Set<string>): string {
+  const alternatives = ALTERNATIVE_JOKES[originalJoke]
+  if (!alternatives) {
+    // Fallback générique: ajouter une variation simple
+    return `${originalJoke} (Ce pattern se répète...)`
+  }
+
+  // Chercher une alternative non utilisée
+  for (const alt of alternatives) {
+    if (!usedAlternatives.has(alt)) {
+      usedAlternatives.add(alt)
+      return alt
+    }
+  }
+
+  // Si toutes les alternatives sont utilisées, en retourner une aléatoire
+  const randomAlt = alternatives[Math.floor(Math.random() * alternatives.length)]
+  return randomAlt
+}
+
+/**
  * Traite un ensemble d'insights de plusieurs matches et adapte les jokes dupliquées
  * Détecte quand la même joke se répète et la customise pour chaque match
  */
@@ -507,9 +558,14 @@ export async function deduplicateAndAdaptJokes(
 
   // Pour chaque joke dupliquée, adapter les occurrences (sauf la première)
   const result = structuredClone(matchesWithInsights)
+  const usedAlternatives = new Map<string, Set<string>>()
 
   for (const duplicatedJoke of duplicatedJokes) {
     const occurrences = jokeFrequency.get(duplicatedJoke)!
+    if (!usedAlternatives.has(duplicatedJoke)) {
+      usedAlternatives.set(duplicatedJoke, new Set())
+    }
+    const used = usedAlternatives.get(duplicatedJoke)!
     
     // Adapter les occurrences à partir de la deuxième (index 1+)
     for (let i = 1; i < occurrences.length; i++) {
@@ -518,24 +574,32 @@ export async function deduplicateAndAdaptJokes(
       const insight = matchItem.insights[insightIndex]
 
       if (insight && insight.joke === duplicatedJoke) {
+        let adaptedJoke: string | null = null
+
+        // D'abord, essayer l'adaptation OpenAI
         try {
-          console.log(
-            `Adaptant joke dupliquée pour match ${matchIndex}: "${duplicatedJoke}"`
-          )
-          
-          const adaptedJoke = await adaptJokeWithContext(
+          adaptedJoke = await adaptJokeWithContext(
             duplicatedJoke,
             matchItem.match,
             matchItem.puuid,
             insight.title || "performance"
           )
 
-          insight.joke = adaptedJoke
-          insight.isAdapted = true
+          // Vérifier si l'adaptation est différente de l'original
+          if (adaptedJoke.toLowerCase().trim() === duplicatedJoke.toLowerCase().trim()) {
+            adaptedJoke = null
+          }
         } catch (error) {
-          console.error(`Erreur lors de l'adaptation de la joke: ${error}`)
-          // Garder la joke originale en cas d'erreur
+          adaptedJoke = null
         }
+
+        // Si OpenAI échoue ou retourne identique, utiliser le pool de jokes alternatives
+        if (!adaptedJoke) {
+          adaptedJoke = getAlternativeJoke(duplicatedJoke, used)
+        }
+
+        insight.joke = adaptedJoke
+        insight.isAdapted = adaptedJoke !== duplicatedJoke
       }
     }
   }
