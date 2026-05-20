@@ -469,7 +469,7 @@ Retourne UNIQUEMENT la blague adaptée, rien d'autre.`
     max_tokens: 100
   })
 
-  const adaptedJoke = response.choices[0].message.content?.trim() || originalJoke
+  const adaptedJoke = response.choices[0].message.content?.trim() || 'null'
   return adaptedJoke
 }
 
